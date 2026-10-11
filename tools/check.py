@@ -16,6 +16,7 @@ def main():
     def run(command, directory=ROOT): subprocess.run(command, cwd=directory, env=environment, check=True)
     run([sys.executable, '-m', 'unittest', 'discover', '-s', 'components/moderation/tests', '-q'])
     run([sys.executable, '-m', 'unittest', 'discover', '-s', 'runtime/comments/tests', '-q'])
+    run([sys.executable, '-m', 'unittest', 'discover', '-s', 'tools/tests', '-q'])
     run([sys.executable, 'tools/public-check.py'])
     if not args.python_only:
         run(['terraform', 'fmt', '-check', '-recursive'])

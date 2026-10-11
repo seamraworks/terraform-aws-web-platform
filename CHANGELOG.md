@@ -1,8 +1,13 @@
 # Changelog
 
+## 0.1.3
+
+- Normalize build-generated wheel metadata on Windows and rebuild its RECORD checksums.
+- Verify identical Windows/Linux wheel contents and integrity records in CI.
+
 ## 0.1.2
 
-- Normalize component source line endings and ZIP file metadata for matching Windows/Linux release artifacts.
+- Normalize component source line endings and ZIP file metadata across Windows and Linux.
 
 ## 0.1.1
 

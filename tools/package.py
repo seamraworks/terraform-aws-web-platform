@@ -1,7 +1,8 @@
 """Build reproducible release artifacts and a SHA-256 manifest."""
-import gzip
+import base64
+import csv
 import hashlib
-import importlib.util
+import io
 import os
 from pathlib import Path
 import subprocess
@@ -10,6 +11,25 @@ import tempfile
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def normalize_wheel_members(members):
+    """Normalize generated text as well as source, then rebuild wheel integrity records."""
+    members = {
+        name: data.replace(b'\r\n', b'\n') if name.endswith(
+            ('.py', '.txt', '/METADATA', '/WHEEL', '/LICENSE', '/NOTICE')) else data
+        for name, data in members.items()
+    }
+    record = next(name for name in members if name.endswith('.dist-info/RECORD'))
+    output = io.StringIO(newline='')
+    writer = csv.writer(output, lineterminator='\n')
+    for name, data in sorted(members.items()):
+        if name == record: continue
+        digest = base64.urlsafe_b64encode(hashlib.sha256(data).digest()).rstrip(b'=').decode('ascii')
+        writer.writerow((name, 'sha256=' + digest, len(data)))
+    writer.writerow((record, '', ''))
+    members[record] = output.getvalue().encode('utf-8')
+    return members
 
 
 def main():
@@ -27,7 +47,7 @@ def main():
                         str(component), '-w', str(destination)], check=True, env=environment)
     for wheel in destination.glob('web_platform_moderation-*.whl'):
         with zipfile.ZipFile(wheel) as archive:
-            members = {name: archive.read(name) for name in archive.namelist()}
+            members = normalize_wheel_members({name: archive.read(name) for name in archive.namelist()})
         with zipfile.ZipFile(wheel, 'w', zipfile.ZIP_DEFLATED) as archive:
             for name, data in sorted(members.items()):
                 item = zipfile.ZipInfo(name, (1980, 1, 1, 0, 0, 0))
