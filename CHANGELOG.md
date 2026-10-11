@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2
+
+- Normalize component source line endings and ZIP file metadata for matching Windows/Linux release artifacts.
+
 ## 0.1.1
 
 - Correct the CircleCI Terraform download filename to match its verified checksum manifest.
