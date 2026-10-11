@@ -3,6 +3,7 @@
 ## 0.1.1
 
 - Correct the CircleCI Terraform download filename to match its verified checksum manifest.
+- Retry transient connection resets while the integration-test proxy starts.
 
 ## 0.1.0
 

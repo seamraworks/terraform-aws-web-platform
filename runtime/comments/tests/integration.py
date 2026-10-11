@@ -143,14 +143,14 @@ def check_proxy(name, network, directory, build_root):
         def get(path, extra=None):
             headers = {'Host': 'comments-origin.example.com', **(extra or {})}
             request = urllib.request.Request('http://127.0.0.1:' + port + path, headers=headers)
-            try: return urllib.request.urlopen(request)
+            try: return urllib.request.urlopen(request, timeout=5)
             except urllib.error.HTTPError as response: return response
         for _ in range(30):
             try:
                 with get('/api/v1/config?site=example') as response:
                     assert response.status == 403
                 break
-            except urllib.error.URLError: time.sleep(.1)
+            except (urllib.error.URLError, ConnectionError, TimeoutError): time.sleep(.1)
         else: raise RuntimeError('Caddy test proxy unavailable')
         good = {'X-Comments-Origin': 'integration-origin'}
         with get('/api/v1/config?site=example', good) as response:
