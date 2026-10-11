@@ -1,0 +1,9 @@
+[Unit]
+Description=Check comments disk capacity and rotate host file logs
+After=local-fs.target
+[Service]
+EnvironmentFile=@@CONFIG_DIR@@/deployment.env
+Type=oneshot
+WorkingDirectory=@@RUNTIME_DIR@@
+ExecStart=/usr/bin/python3 @@RUNTIME_DIR@@/storage-guard.py
+TimeoutStartSec=50

@@ -1,0 +1,31 @@
+name: web-comments-local
+services:
+  remark:
+    image: umputun/remark42:v1.17.1@sha256:8da1a3b77846f4b1ab9cb20b1faf5069f7f03c5081c3269fee2801f53e77bde1
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8082:8080"
+    env_file:
+      - path: ./.runtime/local/remark.env
+        format: raw
+    environment:
+      REMARK_URL: http://localhost:8082
+      SITE: example
+      AUTH_ANON: "true"
+      NOTIFY_ADMINS: none
+      NOTIFY_USERS: none
+      ALLOWED_HOSTS: "http://127.0.0.1:3000,http://localhost:3000,'self'"
+      EDIT_TIME: 5m
+      MAX_COMMENT_SIZE: "2048"
+      AVATAR_FS_PATH: /srv/var/avatars
+      IMAGE_FS_PATH: /srv/var/pictures
+      MAX_BACKUP_FILES: "2"
+    volumes:
+      - ./.runtime/local/remark:/srv/var
+    mem_limit: 180m
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+    security_opt: [no-new-privileges:true]

@@ -1,0 +1,23 @@
+{
+  "site": "example",
+  "region": "eu-central-1",
+  "mode": "report",
+  "moderation_provider": "none",
+  "timezone": "UTC",
+  "brand_name": "Example Website",
+  "article_hosts": ["www.example.com"],
+  "embed_hosts": ["www.example.com", "example.com"],
+  "article_path_prefix": "/journal/",
+  "website_url": "https://www.example.com/",
+  "privacy_url": "https://www.example.com/commenting.html",
+  "public_url": "https://comments.example.com",
+  "backup_bucket": "REPLACE_FROM_TERRAFORM_OUTPUT",
+  "admin_ids": [],
+  "digest_to": "owner@example.com",
+  "email_from": "comments@example.com",
+  "email_login_enabled": false,
+  "origin_secret": "REPLACE_WITH_TERRAFORM_ORIGIN_SECRET",
+  "remark_secret": "REPLACE_WITH_PERSISTENT_SECRET",
+  "admin_password": "REPLACE_WITH_ADMIN_PASSWORD",
+  "webhook_secret": "REPLACE_WITH_WEBHOOK_SECRET"
+}

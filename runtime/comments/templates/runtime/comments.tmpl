@@ -1,0 +1,13 @@
+#!/bin/bash
+set -euo pipefail
+cd @@RUNTIME_DIR@@
+# stdin stays available for pipelines; only the restore command gets writable media.
+if [ "${1:-}" = recover ]; then
+  docker compose stop worker
+  trap 'docker compose up -d --no-build worker' EXIT
+  docker compose run --rm --no-deps -v @@RUNTIME_DIR@@/data/remark:/remark-data worker "$@"
+elif [ "${1:-}" = restore ]; then
+  docker compose run --rm --no-deps -v @@RUNTIME_DIR@@/data/remark:/remark-data worker "$@"
+else
+  docker compose exec -T worker python moderator.py "$@"
+fi

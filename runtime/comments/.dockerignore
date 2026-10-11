@@ -1,0 +1,8 @@
+*
+!Dockerfile
+!requirements.txt
+!moderator.py
+!operations.py
+!digest.py
+!moderation/
+!moderation/**

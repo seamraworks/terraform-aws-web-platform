@@ -1,0 +1,8 @@
+Terraform AWS Web Platform
+Copyright 2026 Seamra Works
+
+This repository contains original deployment configuration and runtime code.
+External components and dependencies retain their own licenses and notices.
+Remark42 and Caddy are referenced as upstream Docker images, not vendored source.
+Python, boto3, Terraform, Terraform providers, Docker and Ubuntu are separate
+dependencies. Consult each pinned upstream distribution for its license terms.

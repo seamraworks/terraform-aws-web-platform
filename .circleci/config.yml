@@ -1,0 +1,43 @@
+version: 2.1
+jobs:
+  validate:
+    machine:
+      image: ubuntu-2404:2026.05.1
+    steps:
+      - run:
+          name: Checkout exact triggering commit over public HTTPS
+          command: |
+            git clone https://github.com/seamraworks/terraform-aws-web-platform.git .
+            git checkout "$CIRCLE_SHA1"
+      - run:
+          name: Install pinned Terraform
+          command: |
+            curl -fsSLo /tmp/terraform.zip https://releases.hashicorp.com/terraform/1.15.8/terraform_1.15.8_linux_amd64.zip
+            curl -fsSLo /tmp/terraform.sha256 https://releases.hashicorp.com/terraform/1.15.8/terraform_1.15.8_SHA256SUMS
+            (cd /tmp && grep 'terraform_1.15.8_linux_amd64.zip$' terraform.sha256 | sha256sum -c -)
+            sudo unzip -o /tmp/terraform.zip -d /usr/local/bin
+      - run:
+          name: Python dependencies
+          command: |
+            python3 -m venv .venv
+            .venv/bin/pip install -r runtime/comments/requirements.txt 'setuptools==80.9.0' 'wheel==0.45.1'
+      - run:
+          name: Unit, contract, Terraform mock and documentation checks
+          command: .venv/bin/python tools/check.py
+      - run:
+          name: Reproducible release artifacts
+          command: .venv/bin/python tools/package.py
+      - run:
+          name: Disposable real Remark42 and Caddy integration
+          command: |
+            export PYTHONPATH="$PWD/components/moderation/src:$PWD/runtime/comments"
+            .venv/bin/python runtime/comments/tests/integration.py
+      - store_artifacts:
+          path: dist
+workflows:
+  validate:
+    jobs:
+      - validate:
+          filters:
+            tags:
+              only: /^v.*/

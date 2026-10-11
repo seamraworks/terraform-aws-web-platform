@@ -1,0 +1,60 @@
+{
+    email @@OWNER_EMAIL@@
+    auto_https disable_redirects
+    servers {
+        import /proxy/trusted.caddy
+        trusted_proxies_strict
+        client_ip_headers X-Forwarded-For
+        protocols h1 h2
+        timeouts {
+            read_body 10s
+            write 30s
+        }
+    }
+}
+
+# Caddy's ACME handler intercepts HTTP-01 challenges before this fallback.
+http://@@ORIGIN_DOMAIN@@ {
+    respond "Not found" 404
+}
+
+https://@@ORIGIN_DOMAIN@@ {
+    tls {
+        issuer acme {
+            disable_tlsalpn_challenge
+        }
+    }
+    route {
+        @wrongOrigin not header @@ORIGIN_HEADER@@ {$ORIGIN_SECRET}
+        respond @wrongOrigin "Forbidden" 403
+        @paused file {
+            root /ops
+            try_files maintenance
+        }
+        respond @paused "Comments are briefly unavailable for maintenance." 503
+        @diskPressure file {
+            root /ops
+            try_files disk-pressure
+        }
+        respond @diskPressure "Comments are temporarily unavailable. Please try again later." 503
+        # The automation password must never authenticate through the public CDN.
+        @basic header_regexp Authorization "(?i)^basic[ ]"
+        respond @basic "Forbidden" 403
+        @recovery path /api/v1/admin/export /api/v1/admin/import* /api/v1/admin/remap /api/v1/admin/wait
+        respond @recovery "Forbidden" 403
+        @privacy path /web/privacy.html
+        redir @privacy @@PRIVACY_URL@@ 302
+        @static path /web/*
+        header @static >Cache-Control "public, max-age=3600"
+        reverse_proxy 172.29.42.3:8080 {
+            transport http {
+                response_header_timeout 20s
+            }
+            header_up Host @@PUBLIC_DOMAIN@@
+            header_up X-Forwarded-Proto https
+            header_up X-Real-IP {client_ip}
+            header_up -CF-Connecting-IP
+            header_up -@@ORIGIN_HEADER@@
+        }
+    }
+}

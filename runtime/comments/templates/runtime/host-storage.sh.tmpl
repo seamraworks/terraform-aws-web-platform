@@ -1,0 +1,53 @@
+#!/bin/bash
+# Storage policy for this dedicated Ubuntu comments VM. Never run on a shared host.
+set -euo pipefail
+install -d /etc/systemd/journald.conf.d /etc/systemd/system /var/lib/logrotate
+cat > /etc/systemd/journald.conf.d/@@SERVICE_NAME@@.conf <<'EOF'
+[Journal]
+Storage=persistent
+SystemMaxUse=128M
+SystemMaxFileSize=8M
+SystemKeepFree=2G
+RuntimeMaxUse=32M
+RuntimeMaxFileSize=4M
+MaxRetentionSec=7day
+ForwardToSyslog=no
+RateLimitIntervalSec=30s
+RateLimitBurst=1000
+EOF
+# journald retains system/security messages; avoid an unbounded second syslog copy.
+if systemctl cat rsyslog.service >/dev/null 2>&1; then
+    systemctl disable --now rsyslog.service
+fi
+systemctl restart systemd-journald
+journalctl --rotate --vacuum-size=128M --vacuum-time=7d
+cat > /etc/logrotate-@@SERVICE_NAME@@.conf <<'EOF'
+# Host file logs only. Docker owns its own rotated logs; never truncate those.
+/var/log/*.log /var/log/syslog /var/log/messages /var/log/debug /var/log/apt/*.log /var/log/unattended-upgrades/*.log {
+    daily
+    maxsize 5M
+    rotate 2
+    maxage 7
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+    su root adm
+}
+/var/log/btmp /var/log/wtmp /var/log/faillog {
+    daily
+    maxsize 1M
+    rotate 2
+    missingok
+    notifempty
+    copytruncate
+    su root utmp
+}
+EOF
+# One policy owns these paths; the guard timer checks rotation every minute.
+systemctl disable --now logrotate.timer
+install -m 644 systemd/@@SERVICE_NAME@@-storage.service /etc/systemd/system/
+install -m 644 systemd/@@SERVICE_NAME@@-storage.timer /etc/systemd/system/
+install -m 644 systemd/@@SERVICE_NAME@@-cleanup.service /etc/systemd/system/
+install -m 644 systemd/@@SERVICE_NAME@@-cleanup.timer /etc/systemd/system/

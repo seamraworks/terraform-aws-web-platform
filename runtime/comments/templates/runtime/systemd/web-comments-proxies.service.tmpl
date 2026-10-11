@@ -1,0 +1,8 @@
+[Unit]
+Description=Refresh trusted CloudFront origin networks
+After=network-online.target docker.service
+[Service]
+EnvironmentFile=@@CONFIG_DIR@@/deployment.env
+Type=oneshot
+WorkingDirectory=@@RUNTIME_DIR@@
+ExecStart=/usr/bin/python3 @@RUNTIME_DIR@@/refresh-proxies.py

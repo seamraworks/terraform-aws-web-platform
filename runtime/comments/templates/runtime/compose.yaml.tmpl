@@ -1,0 +1,79 @@
+name: @@SERVICE_NAME@@
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "5m"
+    max-file: "2"
+services:
+  remark:
+    image: umputun/remark42:v1.17.1@sha256:8da1a3b77846f4b1ab9cb20b1faf5069f7f03c5081c3269fee2801f53e77bde1
+    restart: unless-stopped
+    env_file:
+      - path: @@CONFIG_DIR@@/remark.env
+        format: raw
+    environment:
+      REMARK_URL: @@PUBLIC_URL@@
+      SITE: "@@SITE@@"
+      AUTH_EMAIL_FROM: '"@@BRAND_NAME@@ comments" <@@EMAIL_FROM@@>'
+      AUTH_EMAIL_SUBJ: Your @@BRAND_NAME@@ comment sign-in code
+      SMTP_HOST: @@SMTP_HOST@@
+      SMTP_PORT: "587"
+      SMTP_STARTTLS: "true"
+      NOTIFY_ADMINS: webhook
+      NOTIFY_USERS: none
+      NOTIFY_WEBHOOK_URL: http://worker:8090/webhook
+      NOTIFY_WEBHOOK_TEMPLATE: '{"id":{{.ID | escapeJSONString}},"site":{{.Locator.SiteID | escapeJSONString}},"url":{{.Locator.URL | escapeJSONString}}}'
+      EDIT_TIME: 5m
+      ADMIN_EDIT: "false"
+      MAX_COMMENT_SIZE: "2048"
+      ALLOWED_HOSTS: @@ALLOWED_HOSTS@@
+      TRUSTED_PROXY: 172.29.42.2/32
+      AVATAR_FS_PATH: /srv/var/avatars
+      IMAGE_FS_PATH: /srv/var/pictures
+      MAX_BACKUP_FILES: "2"
+    volumes:
+      - ./data/remark:/srv/var
+      - ./templates/email_confirmation_login.html.tmpl:/srv/email_confirmation_login.html.tmpl:ro
+    networks:
+      backend:
+        ipv4_address: 172.29.42.3
+    mem_limit: 180m
+    logging: *logging
+    security_opt: [no-new-privileges:true]
+  caddy:
+    image: caddy:2@sha256:13b7fbadd017b042956fddbceedeeea12bb1e560534f9b3df281269dbcc61813
+    restart: unless-stopped
+    # Bind on the host so the nftables INPUT rules cannot be bypassed by Docker DNAT.
+    network_mode: host
+    env_file:
+      - path: @@CONFIG_DIR@@/caddy.env
+        format: raw
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./data/caddy:/data
+      - ./data/ops:/ops:ro
+      - ./data/proxy:/proxy:ro
+    mem_limit: 64m
+    logging: *logging
+    security_opt: [no-new-privileges:true]
+  worker:
+    build: .
+    restart: unless-stopped
+    volumes:
+      - @@CONFIG_DIR@@/config.json:/config/config.json:ro
+      - ./data/state:/state
+      - ./data/ops:/ops
+      - ./data/remark:/remark-data:ro
+    # Recovery commands run a second worker container on this network.
+    networks: [backend]
+    read_only: true
+    tmpfs: ["/tmp:size=96m,mode=1777"]
+    mem_limit: 120m
+    logging: *logging
+    security_opt: [no-new-privileges:true]
+networks:
+  backend:
+    ipam:
+      config:
+        - subnet: 172.29.42.0/28
+          gateway: 172.29.42.2
