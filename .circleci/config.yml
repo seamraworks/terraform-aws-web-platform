@@ -12,10 +12,10 @@ jobs:
       - run:
           name: Install pinned Terraform
           command: |
-            curl -fsSLo /tmp/terraform.zip https://releases.hashicorp.com/terraform/1.15.8/terraform_1.15.8_linux_amd64.zip
+            curl -fsSLo /tmp/terraform_1.15.8_linux_amd64.zip https://releases.hashicorp.com/terraform/1.15.8/terraform_1.15.8_linux_amd64.zip
             curl -fsSLo /tmp/terraform.sha256 https://releases.hashicorp.com/terraform/1.15.8/terraform_1.15.8_SHA256SUMS
             (cd /tmp && grep 'terraform_1.15.8_linux_amd64.zip$' terraform.sha256 | sha256sum -c -)
-            sudo unzip -o /tmp/terraform.zip -d /usr/local/bin
+            sudo unzip -o /tmp/terraform_1.15.8_linux_amd64.zip -d /usr/local/bin
       - run:
           name: Python dependencies
           command: |

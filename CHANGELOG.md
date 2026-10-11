@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1
+
+- Correct the CircleCI Terraform download filename to match its verified checksum manifest.
+
 ## 0.1.0
 
 - Reusable AWS static-site, journal-comments and comments-email modules.

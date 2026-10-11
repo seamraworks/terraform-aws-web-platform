@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "web-platform-moderation"
-version = "0.1.0"
+version = "0.1.1"
 description = "Portable conservative content moderation with OpenAI and HTTP providers"
 requires-python = ">=3.11"
 license = "Apache-2.0"
