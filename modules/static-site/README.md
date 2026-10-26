@@ -17,6 +17,10 @@ Use AWS provider 6.x; CloudFront certificates require the `aws.use1` alias in us
 | `branch` | `string` | `"main"` | Git branch used by the pipeline. |
 | `enable_pipeline` | `bool` | `true` | Whether to create CodeBuild, CodePipeline, and the invalidation Lambda. |
 | `enable_clean_url_rewrite` | `bool` | `false` | Whether to attach a CloudFront Function that rewrites extensionless clean URLs to index.html objects. |
+| `viewer_request_function_code` | `string` | `null` | Optional CloudFront viewer-request JavaScript instead of the built-in clean URL rewrite; null preserves existing behavior. |
+| `error_page_path` | `string` | `"/redirect.html"` | Root-relative page served for origin 403 and 404 errors; defaults retain the legacy redirect page. |
+| `forbidden_response_code` | `number` | `403` | Viewer status for origin 403 errors; use 404 for private static origins that return 403 for missing objects. |
+| `error_caching_min_ttl` | `number` | `300` | Minimum cache time in seconds for origin 403 and 404 responses. |
 | `buildspec` | `string` | `null` | Optional CodeBuild buildspec content; null reads buildspec.yml from the repository. |
 | `codepipeline_artifact_bucket` | `string` | `null` | Existing shared CodePipeline artifact bucket. |
 | `cloudfront_price_class` | `string` | `"PriceClass_100"` | CloudFront edge-location price class. PriceClass_100 keeps new experimental sites to US, Canada, Europe, and Israel. |

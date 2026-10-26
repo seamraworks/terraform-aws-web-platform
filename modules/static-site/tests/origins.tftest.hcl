@@ -1,4 +1,7 @@
 mock_provider "aws" {
+  mock_resource "aws_cloudfront_function" {
+    defaults = { arn = "arn:aws:cloudfront::123456789012:function/example-routing" }
+  }
   mock_resource "aws_cloudfront_distribution" {
     defaults = { arn = "arn:aws:cloudfront::123456789012:distribution/EXAMPLE", domain_name = "example.cloudfront.net", hosted_zone_id = "Z2FDTNDATAQYW2" }
   }
@@ -56,4 +59,58 @@ run "signed_before_private" {
     condition     = length(jsondecode(aws_s3_bucket_policy.site.policy).Statement) == 2 && !aws_s3_bucket_public_access_block.site.block_public_policy
     error_message = "Keep public permission while verifying OAC signing."
   }
+}
+
+run "legacy_error_response_defaults" {
+  command = apply
+  assert {
+    condition = alltrue([for response in aws_cloudfront_distribution.this.custom_error_response :
+      response.error_code == response.response_code && response.response_page_path == "/redirect.html" && response.error_caching_min_ttl == 300
+    ]) && length(aws_cloudfront_distribution.this.custom_error_response) == 2
+    error_message = "Existing sites must retain their error pages and HTTP statuses by default."
+  }
+  assert {
+    condition     = length(aws_cloudfront_function.clean_urls) == 0
+    error_message = "Default upgrades must not attach new request routing."
+  }
+}
+
+run "custom_routing_and_missing_pages" {
+  command = apply
+  variables {
+    viewer_request_function_code = "function handler(event) { return event.request; }"
+    error_page_path              = "/404.html"
+    forbidden_response_code      = 404
+    error_caching_min_ttl        = 30
+  }
+  assert {
+    condition     = length(one(aws_cloudfront_distribution.this.default_cache_behavior).function_association) == 1
+    error_message = "Custom routing must be attached to the existing distribution."
+  }
+  assert {
+    condition = alltrue([for response in aws_cloudfront_distribution.this.custom_error_response :
+      response.response_code == 404 && response.response_page_path == "/404.html" && response.error_caching_min_ttl == 30
+    ])
+    error_message = "Missing private-origin objects must use the configured HTTP status and error page."
+  }
+}
+
+run "built_in_clean_urls_still_available" {
+  command = apply
+  variables {
+    enable_clean_url_rewrite = true
+  }
+  assert {
+    condition     = strcontains(aws_cloudfront_function.clean_urls[0].code, "request.uri = uri + 'index.html'")
+    error_message = "Existing clean URL callers must retain their built-in function."
+  }
+}
+
+run "reject_conflicting_request_handlers" {
+  command = plan
+  variables {
+    enable_clean_url_rewrite     = true
+    viewer_request_function_code = "function handler(event) { return event.request; }"
+  }
+  expect_failures = [var.viewer_request_function_code]
 }

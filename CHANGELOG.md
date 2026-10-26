@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Allow callers to supply viewer-request routing and custom CloudFront error responses while retaining existing defaults and resource addresses.
+
 ## 0.1.3
 
 - Normalize build-generated wheel metadata on Windows and rebuild its RECORD checksums.

@@ -53,6 +53,45 @@ variable "enable_clean_url_rewrite" {
   default     = false
 }
 
+variable "viewer_request_function_code" {
+  description = "Optional CloudFront viewer-request JavaScript instead of the built-in clean URL rewrite; null preserves existing behavior."
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.viewer_request_function_code == null || !var.enable_clean_url_rewrite
+    error_message = "Choose custom viewer-request code or the built-in clean URL rewrite."
+  }
+}
+
+variable "error_page_path" {
+  description = "Root-relative page served for origin 403 and 404 errors; defaults retain the legacy redirect page."
+  type        = string
+  default     = "/redirect.html"
+
+  validation {
+    condition     = startswith(var.error_page_path, "/")
+    error_message = "The error page must use a root-relative path."
+  }
+}
+
+variable "forbidden_response_code" {
+  description = "Viewer status for origin 403 errors; use 404 for private static origins that return 403 for missing objects."
+  type        = number
+  default     = 403
+
+  validation {
+    condition     = contains([403, 404], var.forbidden_response_code)
+    error_message = "Origin 403 errors must remain forbidden or be classified as missing objects."
+  }
+}
+
+variable "error_caching_min_ttl" {
+  description = "Minimum cache time in seconds for origin 403 and 404 responses."
+  type        = number
+  default     = 300
+}
+
 variable "buildspec" {
   description = "Optional CodeBuild buildspec content; null reads buildspec.yml from the repository."
   type        = string

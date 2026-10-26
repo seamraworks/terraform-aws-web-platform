@@ -166,13 +166,13 @@ resource "aws_acm_certificate_validation" "this" {
 }
 
 resource "aws_cloudfront_function" "clean_urls" {
-  count = var.enable_clean_url_rewrite ? 1 : 0
+  count = var.enable_clean_url_rewrite || var.viewer_request_function_code != null ? 1 : 0
 
   name    = local.clean_url_function_name
   runtime = "cloudfront-js-2.0"
-  comment = "Rewrite extensionless clean URLs to index.html before S3 origin lookup."
+  comment = var.viewer_request_function_code == null ? "Rewrite extensionless clean URLs to index.html before S3 origin lookup." : "Apply caller-supplied viewer-request routing."
   publish = true
-  code    = <<-JS
+  code    = var.viewer_request_function_code != null ? var.viewer_request_function_code : <<-JS
     function handler(event) {
       var request = event.request;
       var uri = request.uri;
@@ -244,16 +244,16 @@ resource "aws_cloudfront_distribution" "this" {
 
   custom_error_response {
     error_code            = 403
-    response_code         = 403
-    response_page_path    = "/redirect.html"
-    error_caching_min_ttl = 300
+    response_code         = var.forbidden_response_code
+    response_page_path    = var.error_page_path
+    error_caching_min_ttl = var.error_caching_min_ttl
   }
 
   custom_error_response {
     error_code            = 404
     response_code         = 404
-    response_page_path    = "/redirect.html"
-    error_caching_min_ttl = 300
+    response_page_path    = var.error_page_path
+    error_caching_min_ttl = var.error_caching_min_ttl
   }
 
   restrictions {
